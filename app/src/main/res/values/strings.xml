@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Psychologist</string>
+    <string name="ai_psychologist">AI Psychologist</string>
+    <string name="my_sessions">My Sessions</string>
+    <string name="new_session">New Session</string>
+    <string name="session_prefix">Session #</string>
+    <string name="how_are_you_feeling">How are you feeling today?</string>
+    <string name="ai_thinking">The therapist is thinking...</string>
+    <string name="need_help">Need help?</string>
+    <string name="crisis_warning">If you are thinking of harming yourself, please call now:</string>
+    <string name="suicide_line">📞 1018 (Suicide Intervention Line - Greece)</string>
+    <string name="emergency_line">📞 166 (Ambulance - Greece)</string>
+    <string name="recent_sessions">Recent Sessions</string>
+</resources>

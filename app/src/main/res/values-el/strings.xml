@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Ψυχολόγος</string>
+    <string name="ai_psychologist">AI Ψυχολόγος</string>
+    <string name="my_sessions">Οι Συνεδρίες μου</string>
+    <string name="new_session">Νέα Συνεδρία</string>
+    <string name="session_prefix">Συνεδρία #</string>
+    <string name="how_are_you_feeling">Πώς νιώθεις σήμερα;</string>
+    <string name="ai_thinking">Ο θεραπευτής σκέφτεται...</string>
+    <string name="need_help">Χρειάζεσαι βοήθεια;</string>
+    <string name="crisis_warning">Αν σκέφτεσαι να κάνεις κακό στον εαυτό σου, σε παρακαλώ κάλεσε τώρα:</string>
+    <string name="suicide_line">📞 1018 (Γραμμή Παρέμβασης για την Αυτοκτονία)</string>
+    <string name="emergency_line">📞 166 (ΕΚΑΒ)</string>
+</resources>
