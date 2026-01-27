@@ -42,4 +42,7 @@ object AppModule {
 
     @Provides
     fun provideJournalDao(db: PsychologistDatabase): JournalDao = db.journalDao()
+
+    @Provides
+    fun provideInsightDao(db: PsychologistDatabase) = db.insightDao()
 }

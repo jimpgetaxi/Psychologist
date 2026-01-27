@@ -27,6 +27,7 @@ class ChatRepositoryImpl @Inject constructor(
     private val messageDao: MessageDao,
     private val moodDao: MoodDao,
     private val journalDao: JournalDao,
+    private val insightDao: com.jimpgetaxi.psychologist.data.local.InsightDao,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ChatRepository {
 
@@ -50,6 +51,7 @@ class ChatRepositoryImpl @Inject constructor(
         val profile = userPreferencesRepository.userProfile.first()
         val recentMoods = moodDao.getRecentMoods(5)
         val recentJournalEntries = journalDao.getRecentEntries(3)
+        val longTermInsights = insightDao.getRecentInsights()
 
         val moodContext = if (recentMoods.isNotEmpty()) {
             "\nRECENT MOOD HISTORY (1=Sad, 5=Happy):\n" + 
@@ -63,6 +65,11 @@ class ChatRepositoryImpl @Inject constructor(
             }
         } else ""
 
+        val memoryContext = if (longTermInsights.isNotEmpty()) {
+            "\nLONG-TERM MEMORY (Important facts from past sessions):\n" +
+            longTermInsights.joinToString("\n") { "- ${it.content}" }
+        } else ""
+
         val systemInstructionText = """
                 ${SystemPrompts.DEFAULT_PSYCHOLOGIST}
                 
@@ -72,6 +79,7 @@ class ChatRepositoryImpl @Inject constructor(
                 Main Concern: ${profile.mainConcern}
                 $moodContext
                 $journalContext
+                $memoryContext
             """.trimIndent()
 
         val config = generationConfig {
@@ -91,6 +99,33 @@ class ChatRepositoryImpl @Inject constructor(
             safetySettings = safetySettings,
             systemInstruction = content { text(systemInstructionText) }
         )
+    }
+
+    private suspend fun extractAndSaveInsight(sessionId: Long) {
+        try {
+            val messages = messageDao.getMessagesForSession(sessionId).first().takeLast(6)
+            if (messages.size < 2) return
+
+            val conversationText = messages.joinToString("\n") { "${it.sender}: ${it.content}" }
+            
+            val extractionModel = GenerativeModel(
+                modelName = "gemini-3-flash-preview",
+                apiKey = BuildConfig.GEMINI_API_KEY,
+                systemInstruction = content { 
+                    text("You are a memory module. Analyze the conversation and extract ONE important fact or insight about the user that should be remembered long-term (e.g., 'User's father passed away 2 years ago' or 'User is afraid of flying'). If no new important fact is found, reply only with 'NONE'. Keep it very brief.") 
+                }
+            )
+
+            val response = extractionModel.generateContent("Analyze this conversation:\n$conversationText")
+            val insightText = response.text?.trim() ?: "NONE"
+
+            if (insightText != "NONE" && insightText.length > 5) {
+                insightDao.insertInsight(com.jimpgetaxi.psychologist.data.local.InsightEntity(content = insightText))
+                Log.d("ChatRepo", "Saved new insight: $insightText")
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepo", "Error extracting insight", e)
+        }
     }
 
     override suspend fun sendMessage(sessionId: Long, text: String): Result<Unit> {
@@ -132,6 +167,9 @@ class ChatRepositoryImpl @Inject constructor(
                 sender = Sender.AI
             )
             messageDao.insertMessage(aiMessage)
+
+            // Extract insight asynchronously (or simple call for now)
+            extractAndSaveInsight(sessionId)
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -178,6 +216,9 @@ class ChatRepositoryImpl @Inject constructor(
             sender = Sender.AI
         )
         messageDao.insertMessage(aiMessage)
+        
+        // 5. Extract insight
+        extractAndSaveInsight(sessionId)
     }
 
     override suspend fun deleteSession(sessionId: Long) {
