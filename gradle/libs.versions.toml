@@ -14,8 +14,12 @@ ksp = "2.0.21-1.0.25"
 generativeAi = "0.9.0"
 navCompose = "2.8.3"
 datastore = "1.0.0"
+biometric = "1.1.0"
+appcompat = "1.6.1"
 
 [libraries]
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
