@@ -33,6 +33,7 @@ fun SessionScreen(
     onBreathingClick: () -> Unit
 ) {
     val sessions by sessionViewModel.sessions.collectAsState()
+    val allMoods by moodViewModel.allMoods.collectAsState()
     var showRenameDialog by remember { mutableStateOf<SessionEntity?>(null) }
 
     if (showRenameDialog != null) {
@@ -81,6 +82,10 @@ fun SessionScreen(
                         moodViewModel.saveMood(value)
                     }
                 )
+                if (allMoods.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    com.jimpgetaxi.psychologist.presentation.mood.MoodChart(moods = allMoods)
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = stringResource(R.string.recent_sessions),
