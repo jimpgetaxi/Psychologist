@@ -80,12 +80,22 @@ fun PsychologistAppNavigation(startDestination: String) {
                 },
                 onJournalClick = {
                     navController.navigate("journal")
+                },
+                onBreathingClick = {
+                    navController.navigate("breathing")
                 }
             )
         }
         composable("journal") {
             val viewModel: JournalViewModel = hiltViewModel()
             JournalScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("breathing") {
+            val viewModel: com.jimpgetaxi.psychologist.presentation.breathing.BreathingViewModel = hiltViewModel()
+            com.jimpgetaxi.psychologist.presentation.breathing.BreathingScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() }
             )

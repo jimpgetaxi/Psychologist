@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,7 +29,8 @@ fun SessionScreen(
     sessionViewModel: SessionViewModel,
     moodViewModel: MoodViewModel,
     onSessionClick: (Long) -> Unit,
-    onJournalClick: () -> Unit
+    onJournalClick: () -> Unit,
+    onBreathingClick: () -> Unit
 ) {
     val sessions by sessionViewModel.sessions.collectAsState()
     var showRenameDialog by remember { mutableStateOf<SessionEntity?>(null) }
@@ -49,6 +51,9 @@ fun SessionScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.my_sessions), fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = onBreathingClick) {
+                        Icon(Icons.Filled.Favorite, contentDescription = "Breathing Exercises")
+                    }
                     IconButton(onClick = onJournalClick) {
                         Icon(Icons.Default.Edit, contentDescription = "Journal")
                     }
