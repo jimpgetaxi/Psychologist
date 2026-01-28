@@ -12,4 +12,5 @@ interface ChatRepository {
     suspend fun createNewSession(): Long
     suspend fun deleteSession(sessionId: Long)
     suspend fun updateSessionTitle(sessionId: Long, newTitle: String)
+    suspend fun getAvailableModels(): List<String>
 }

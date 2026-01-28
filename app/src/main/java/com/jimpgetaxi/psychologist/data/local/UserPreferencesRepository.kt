@@ -26,6 +26,11 @@ class UserPreferencesRepository @Inject constructor(
         val USER_AGE = intPreferencesKey("user_age")
         val MAIN_CONCERN = stringPreferencesKey("main_concern")
         val PROFILE_COMPLETED = stringPreferencesKey("profile_completed") // "true" or null
+        val SELECTED_MODEL = stringPreferencesKey("selected_model")
+    }
+
+    val selectedModel: Flow<String> = dataStore.data.map { prefs ->
+        prefs[SELECTED_MODEL] ?: "gemini-3-flash-preview"
     }
 
     val userProfile: Flow<UserProfile> = dataStore.data.map { prefs ->
@@ -43,6 +48,12 @@ class UserPreferencesRepository @Inject constructor(
             prefs[USER_AGE] = age
             prefs[MAIN_CONCERN] = concern
             prefs[PROFILE_COMPLETED] = "true"
+        }
+    }
+
+    suspend fun updateSelectedModel(modelName: String) {
+        dataStore.edit { prefs ->
+            prefs[SELECTED_MODEL] = modelName
         }
     }
     

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jimpgetaxi.psychologist.domain.repository.ChatRepository
 import com.jimpgetaxi.psychologist.domain.usecase.DetectCrisisUseCase
+import com.jimpgetaxi.psychologist.data.local.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -12,6 +13,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val repository: ChatRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val detectCrisisUseCase: DetectCrisisUseCase
 ) : ViewModel() {
 
@@ -19,6 +21,40 @@ class ChatViewModel @Inject constructor(
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     private var currentSessionId: Long = -1
+
+    init {
+        viewModelScope.launch {
+            userPreferencesRepository.selectedModel.collect { model ->
+                _uiState.update { it.copy(currentModel = model) }
+            }
+        }
+        fetchModels()
+    }
+
+    private fun fetchModels() {
+        viewModelScope.launch {
+            val models = repository.getAvailableModels()
+            if (models.isNotEmpty()) {
+                _uiState.update { it.copy(availableModels = models) }
+            } else {
+                // Fallback list if API fails
+                _uiState.update { 
+                    it.copy(availableModels = listOf(
+                        "gemini-2.0-flash-exp",
+                        "gemini-1.5-flash", 
+                        "gemini-1.5-pro",
+                        "gemini-3-flash-preview"
+                    )) 
+                }
+            }
+        }
+    }
+
+    fun updateModel(newModel: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.updateSelectedModel(newModel)
+        }
+    }
 
     fun setSession(sessionId: Long) {
         currentSessionId = sessionId

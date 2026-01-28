@@ -8,5 +8,7 @@ data class ChatUiState(
     val error: String? = null,
     val isAiTyping: Boolean = false,
     val isCrisisDetected: Boolean = false,
-    val streamingMessage: String? = null
+    val streamingMessage: String? = null,
+    val currentModel: String = "gemini-3-flash-preview",
+    val availableModels: List<String> = emptyList()
 )

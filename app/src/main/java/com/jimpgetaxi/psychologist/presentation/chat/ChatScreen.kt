@@ -25,6 +25,11 @@ import java.util.*
 
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.window.Dialog
 // ...
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +42,7 @@ fun ChatScreen(
     val context = LocalContext.current
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    var showSettingsDialog by remember { mutableStateOf(false) }
 
     // Εμφάνιση Toast αν υπάρχει σφάλμα
     LaunchedEffect(uiState.error) {
@@ -44,6 +50,16 @@ fun ChatScreen(
             Toast.makeText(context, "Error: $it", Toast.LENGTH_LONG).show()
         }
     }
+    
+    if (showSettingsDialog) {
+        ModelSelectionDialog(
+            currentModel = uiState.currentModel,
+            availableModels = uiState.availableModels,
+            onModelSelected = { viewModel.updateModel(it) },
+            onDismiss = { showSettingsDialog = false }
+        )
+    }
+
 // ...
 
 
@@ -59,7 +75,21 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.ai_psychologist), fontWeight = FontWeight.Bold) },
+                title = { 
+                    Column {
+                        Text(stringResource(R.string.ai_psychologist), fontWeight = FontWeight.Bold)
+                        Text(
+                            text = uiState.currentModel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showSettingsDialog = true }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -146,6 +176,56 @@ fun ChatScreen(
             }
         }
     }
+}
+
+// ... (existing imports)
+
+@Composable
+fun ModelSelectionDialog(
+    currentModel: String,
+    availableModels: List<String>,
+    onModelSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select AI Model") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                if (availableModels.isEmpty()) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(16.dp))
+                } else {
+                    availableModels.forEach { id ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onModelSelected(id)
+                                    onDismiss()
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (id == currentModel),
+                                onClick = {
+                                    onModelSelected(id)
+                                    onDismiss()
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = id)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable

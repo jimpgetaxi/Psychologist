@@ -22,6 +22,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import javax.inject.Inject
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class ChatRepositoryImpl @Inject constructor(
     private val messageDao: MessageDao,
@@ -49,6 +56,7 @@ class ChatRepositoryImpl @Inject constructor(
 
     private suspend fun getGenerativeModel(): GenerativeModel {
         val profile = userPreferencesRepository.userProfile.first()
+        val currentModelName = userPreferencesRepository.selectedModel.first()
         val recentMoods = moodDao.getRecentMoods(5)
         val recentJournalEntries = journalDao.getRecentEntries(3)
         val longTermInsights = insightDao.getRecentInsights()
@@ -93,7 +101,7 @@ class ChatRepositoryImpl @Inject constructor(
         )
 
         return GenerativeModel(
-            modelName = "gemini-3-flash-preview",
+            modelName = currentModelName,
             apiKey = BuildConfig.GEMINI_API_KEY,
             generationConfig = config,
             safetySettings = safetySettings,
@@ -229,11 +237,60 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    // ... (existing imports)
+
     override suspend fun updateSessionTitle(sessionId: Long, newTitle: String) {
         val session = messageDao.getSessionById(sessionId)
         if (session != null) {
             val updatedSession = session.copy(title = newTitle)
             messageDao.insertSession(updatedSession)
+        }
+    }
+
+    override suspend fun getAvailableModels(): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val apiKey = BuildConfig.GEMINI_API_KEY
+            val url = URL("https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                val response = StringBuilder()
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    response.append(line)
+                }
+                reader.close()
+
+                val jsonResponse = JSONObject(response.toString())
+                val modelsArray = jsonResponse.getJSONArray("models")
+                val modelList = mutableListOf<String>()
+
+                for (i in 0 until modelsArray.length()) {
+                    val modelObj = modelsArray.getJSONObject(i)
+                    val name = modelObj.getString("name").removePrefix("models/")
+                    // Filter for Gemini models that support content generation
+                    if (name.contains("gemini") && modelObj.optJSONArray("supportedGenerationMethods")?.toString()?.contains("generateContent") == true) {
+                        modelList.add(name)
+                    }
+                }
+                // Sort: put "flash" models first, then "pro", then others
+                modelList.sortedBy { 
+                    when {
+                        it.contains("flash") -> 1
+                        it.contains("pro") -> 2
+                        else -> 3
+                    }
+                }
+            } else {
+                Log.e("ChatRepo", "Error fetching models: $responseCode")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepo", "Exception fetching models", e)
+            emptyList()
         }
     }
 }
