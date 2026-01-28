@@ -85,6 +85,7 @@ fun ChatScreen(
                         onValueChange = { inputText = it },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text(stringResource(R.string.how_are_you_feeling)) },
+                        maxLines = 5,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent
@@ -166,7 +167,9 @@ fun MessageBubble(message: MessageEntity) {
             tonalElevation = 2.dp
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(text = message.content, color = textColor, fontSize = 16.sp)
+                androidx.compose.foundation.text.selection.SelectionContainer {
+                    Text(text = message.content, color = textColor, fontSize = 16.sp)
+                }
                 Text(
                     text = formatTime(message.timestamp),
                     color = textColor.copy(alpha = 0.7f),

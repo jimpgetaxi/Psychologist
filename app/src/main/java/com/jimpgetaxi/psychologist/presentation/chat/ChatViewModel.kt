@@ -45,7 +45,14 @@ class ChatViewModel @Inject constructor(
                     // No need to clear isAiTyping yet
                 }
                 .catch { e ->
-                    _uiState.update { it.copy(isAiTyping = false, error = e.message) }
+                    val errorMessage = when {
+                        e.message?.contains("429") == true -> "⚠️ Traffic Limit (429): Please wait a moment."
+                        e.message?.contains("Quota") == true -> "⚠️ API Quota Exceeded."
+                        e.message?.contains("503") == true -> "⚠️ Service Unavailable (503). Try again."
+                        e.message?.contains("finishReason") == true -> "⚠️ Stopped by Safety Filters."
+                        else -> "❌ Error: ${e.message ?: "Unknown error"}"
+                    }
+                    _uiState.update { it.copy(isAiTyping = false, error = errorMessage) }
                 }
                 .collect { fullText ->
                     _uiState.update { it.copy(streamingMessage = fullText) }
