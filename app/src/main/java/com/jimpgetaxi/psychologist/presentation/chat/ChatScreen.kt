@@ -30,9 +30,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.window.Dialog
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 // ...
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel,
@@ -44,11 +47,24 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    // Εμφάνιση Toast αν υπάρχει σφάλμα
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let {
-            Toast.makeText(context, "Error: $it", Toast.LENGTH_LONG).show()
-        }
+    // Error Dialog
+    if (uiState.error != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("Error") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(text = uiState.error!!)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearError() }) {
+                    Text("OK")
+                }
+            }
+        )
     }
     
     if (showSettingsDialog) {
@@ -149,17 +165,21 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(uiState.messages) { message ->
-                    MessageBubble(message)
+                    MessageBubble(
+                        message = message,
+                        onDelete = { viewModel.deleteMessage(it) }
+                    )
                 }
                 if (uiState.streamingMessage != null) {
                     item {
                         MessageBubble(
-                            MessageEntity(
+                            message = MessageEntity(
                                 sessionId = 0,
                                 content = uiState.streamingMessage!!,
                                 timestamp = System.currentTimeMillis(),
                                 sender = Sender.AI
-                            )
+                            ),
+                            onDelete = {} // Cannot delete streaming message
                         )
                     }
                 }
@@ -228,8 +248,12 @@ fun ModelSelectionDialog(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MessageBubble(message: MessageEntity) {
+fun MessageBubble(
+    message: MessageEntity,
+    onDelete: (MessageEntity) -> Unit
+) {
     val isUser = message.sender == Sender.USER
     val alignment = if (isUser) Alignment.End else Alignment.Start
     val bgColor = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
@@ -239,22 +263,46 @@ fun MessageBubble(message: MessageEntity) {
     } else {
         RoundedCornerShape(16.dp, 16.dp, 16.dp, 0.dp)
     }
+    
+    var showMenu by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
-        Surface(
-            color = bgColor,
-            shape = shape,
-            tonalElevation = 2.dp
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                androidx.compose.foundation.text.selection.SelectionContainer {
-                    Text(text = message.content, color = textColor, fontSize = 16.sp)
+        Box {
+            Surface(
+                color = bgColor,
+                shape = shape,
+                tonalElevation = 2.dp,
+                modifier = Modifier.combinedClickable(
+                    onClick = { },
+                    onLongClick = { showMenu = true }
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(text = message.content, color = textColor, fontSize = 16.sp)
+                    }
+                    Text(
+                        text = formatTime(message.timestamp),
+                        color = textColor.copy(alpha = 0.7f),
+                        fontSize = 10.sp,
+                        modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
+                    )
                 }
-                Text(
-                    text = formatTime(message.timestamp),
-                    color = textColor.copy(alpha = 0.7f),
-                    fontSize = 10.sp,
-                    modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
+            }
+            
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Delete") },
+                    onClick = {
+                        onDelete(message)
+                        showMenu = false
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Message")
+                    }
                 )
             }
         }

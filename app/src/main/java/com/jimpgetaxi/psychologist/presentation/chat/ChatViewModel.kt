@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.jimpgetaxi.psychologist.domain.repository.ChatRepository
 import com.jimpgetaxi.psychologist.domain.usecase.DetectCrisisUseCase
 import com.jimpgetaxi.psychologist.data.local.UserPreferencesRepository
+import com.jimpgetaxi.psychologist.data.local.MessageEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -62,6 +63,16 @@ class ChatViewModel @Inject constructor(
             repository.getMessages(sessionId).collect { messages ->
                 _uiState.update { it.copy(messages = messages) }
             }
+        }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    fun deleteMessage(message: MessageEntity) {
+        viewModelScope.launch {
+            repository.deleteMessage(message)
         }
     }
 

@@ -25,4 +25,7 @@ interface MessageDao {
 
     @Query("DELETE FROM messages WHERE sessionId = :sessionId")
     suspend fun deleteMessagesForSession(sessionId: Long)
+
+    @Delete
+    suspend fun deleteMessage(message: MessageEntity)
 }

@@ -293,4 +293,8 @@ class ChatRepositoryImpl @Inject constructor(
             emptyList()
         }
     }
+
+    override suspend fun deleteMessage(message: MessageEntity) {
+        messageDao.deleteMessage(message)
+    }
 }
